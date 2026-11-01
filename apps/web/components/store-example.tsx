@@ -1,21 +1,25 @@
 "use client"
 
-import { useSharedStore } from "@workspace/store/shared"
-import { useUIStore } from "@/stores/ui"
-import { useUserDataStore } from "@/stores/user-data"
+import { useState } from "react"
+
+interface DemoUser {
+  id: string
+  name: string
+  email: string
+}
 
 /**
- * Example component demonstrating shared and app-specific store usage
+ * Example component demonstrating local component state.
  */
 export function StoreExample() {
-  const { user, setUser, clearUser } = useSharedStore()
-  const { sidebarOpen, setState: setUIState } = useUIStore()
-  const { history, setState: setUserDataState } = useUserDataStore()
+  const [user, setUser] = useState<DemoUser | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [history, setHistory] = useState<string[]>([])
 
   return (
     <div className="space-y-6 rounded-lg border border-gray-300 p-6">
       <div>
-        <h3 className="font-semibold">Shared Store (Cross-app)</h3>
+        <h3 className="font-semibold">User State</h3>
         <p className="text-sm text-gray-600">
           Current User: {user?.name || "Not set"}
         </p>
@@ -28,7 +32,7 @@ export function StoreExample() {
           Set User
         </button>
         <button
-          onClick={() => clearUser()}
+          onClick={() => setUser(null)}
           className="ml-2 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
         >
           Clear User
@@ -36,12 +40,12 @@ export function StoreExample() {
       </div>
 
       <div>
-        <h3 className="font-semibold">UI Store (App-specific)</h3>
+        <h3 className="font-semibold">UI State</h3>
         <p className="text-sm text-gray-600">
           Sidebar: {sidebarOpen ? "Open" : "Closed"}
         </p>
         <button
-          onClick={() => setUIState("sidebarOpen", !sidebarOpen)}
+          onClick={() => setSidebarOpen((open) => !open)}
           className="mt-2 rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600"
         >
           Toggle Sidebar
@@ -49,11 +53,11 @@ export function StoreExample() {
       </div>
 
       <div>
-        <h3 className="font-semibold">User Data Store (App-specific)</h3>
+        <h3 className="font-semibold">History State</h3>
         <p className="text-sm text-gray-600">History items: {history.length}</p>
         <button
           onClick={() =>
-            setUserDataState("history", [...history, `Item ${Date.now()}`])
+            setHistory((items) => [...items, `Item ${Date.now()}`])
           }
           className="mt-2 rounded bg-purple-500 px-4 py-2 text-white hover:bg-purple-600"
         >

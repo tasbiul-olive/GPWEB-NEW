@@ -23,7 +23,9 @@ export class HttpError extends Error {
   readonly body: unknown
 
   constructor(status: number, statusText: string, body: unknown) {
-    super(`Request failed with status ${status}${statusText ? ` ${statusText}` : ""}`)
+    super(
+      `Request failed with status ${status}${statusText ? ` ${statusText}` : ""}`
+    )
     this.name = "HttpError"
     this.status = status
     this.statusText = statusText
@@ -60,8 +62,7 @@ export function createApiClient({
       ...fetchOptions
     } = options
     const retryCount = Math.max(0, Math.floor(retries))
-    const canRetry =
-      (method === "GET" || method === "HEAD") && retryCount > 0
+    const canRetry = (method === "GET" || method === "HEAD") && retryCount > 0
     const url = `${normalizedBaseUrl}/${path.replace(/^\/+/, "")}`
     let attempt = 0
 
@@ -69,7 +70,11 @@ export function createApiClient({
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), timeoutMs)
       const abortFromCaller = () => controller.abort(callerSignal?.reason)
-      callerSignal?.addEventListener("abort", abortFromCaller, { once: true })
+      if (callerSignal?.aborted) {
+        abortFromCaller()
+      } else {
+        callerSignal?.addEventListener("abort", abortFromCaller, { once: true })
+      }
 
       try {
         const requestHeaders = new Headers(defaultHeaders)
@@ -120,13 +125,14 @@ export function createApiClient({
         }
         return result.data
       } catch (error) {
-        if (error instanceof HttpError) throw error
-
         if (
-          canRetry &&
-          attempt < retryCount &&
-          !callerSignal?.aborted
+          error instanceof HttpError ||
+          error instanceof ApiResponseValidationError
         ) {
+          throw error
+        }
+
+        if (canRetry && attempt < retryCount && !callerSignal?.aborted) {
           attempt += 1
           await waitBeforeRetry(attempt)
           continue
